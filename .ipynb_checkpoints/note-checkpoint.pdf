@@ -1,0 +1,260 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Notes \n",
+    "\n",
+    "This file is used to show the trace of learning process.\n",
+    "\n",
+    "---"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import numpy\n",
+    "import matplotlib.pyplot as plt\n",
+    "import tensorflow as tf\n",
+    "from tensorflow import keras\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Import MNIST\n",
+    "---"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We first load in the dataset from the Keras package:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "fashion_mnist = keras.datasets.fashion_mnist\n",
+    "(train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The first line merely assigns the name fashion_mnist to a particular dataset located within Keras' dataset library. \n",
+    "\n",
+    "The second line defines four arrays containing the training and testing data, cleaved again into separate structures for images and labels, and then loads all of that data into our standup of Python. \n",
+    "\n",
+    "The training data arrays will be used to --you guessed it-- train the model, and the testing arrays will allow us to evaluate the performance of our model."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Look at data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "image/png": "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\n",
+      "text/plain": [
+       "<Figure size 432x288 with 2 Axes>"
+      ]
+     },
+     "metadata": {
+      "needs_background": "light"
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "plt.figure()\n",
+    "plt.imshow(train_images[0])\n",
+    "plt.colorbar()\n",
+    "plt.grid(False)\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Preprocessing the dataset\n",
+    "---\n",
+    "The greyscale assigned to each pixel within an image has a value range of 0-255. We will want to flatten (smoosh… scale…) this range to 0-1. To achieve this flattening, we will exploit the data structure that our images are stored in, arrays. You see, each image is stored as a 2-dimensional array where each numerical value in the array is the greyscale code of particular pixel. Conveniently, if we divide an entire array by a scalar we generate a new array whose elements are the original elements divided by the scalar."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "train_images = train_images / 255.0\n",
+    "test_images = test_images / 255.0"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Two vital notes about the above.\n",
+    "\n",
+    "Use the value \"255.0\". This value is a floating point number (float), and will always return a float during algebraic operations. In Python, the division operator always returns a float to avoid rounding; but, that is not true for all programming languages, so it's a good habit to include that decimal because it automatically sets that number to be a float.\n",
+    "Do not rescale the train_labels or test_labels arrays, these values are already in the range 0-9, as they should be!"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Model Generation\n",
+    "---\n",
+    "Every NN is constructed from a series of connected layers that are full of connection nodes. Simple mathematical operations are undertaken at each node in each layer, yet through the volume of connections and operations, these ML models can perform impressive and complex tasks.\n",
+    "\n",
+    "Our model will be constructed from 3 layers. The first layer – often referred to as the Input Layer – will intake an image and format the data structure in a method acceptable for the subsequent layers. In our case, this first layer will be a Flatten layer that intakes a multi-dimensional array and produces an array of a single dimension, this places all the pixel data on an equal depth during input. Both of the next layers will be simple fully connected layers, referred to as Dense layers, with 128 and 10 nodes respectively. These fully connected layers are the simplest layer in the sense of understanding, yet allow for the greatest number of layer-to-layer connections and relationships.\n",
+    "\n",
+    "The final bit of hyper-technical knowledge you'll need to learn is that each layer can have its own particular mathematical operation. These activation functions determine the form and relationship between the information provided by the layer. The first dense layer will feature a Rectified Linear Unit (ReLU) Activation Function that outputs values between zero and 1; mathematically, the activation function behaves like f(x)=max(0,x). The final layer uses the softmax activation function. This function also produces values in the 0-1 range, BUT generates these values such that the sum of the outputs will be 1! This makes the softmax a layer that is excellent at outputting probabilities."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "model = keras.Sequential([ keras.layers.Flatten(input_shape=(28, 28)), keras.layers.Dense(128, activation=tf.nn.relu), keras.layers.Dense(10, activation=tf.nn.softmax)])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Training the Model\n",
+    "---\n",
+    "Models must be both compiled and trained prior to use. When compiling we must define a few more parameters that control how models are updated during training (optimizer), how the model's accuracy is measured during training (loss function), and what is to be measured to determine the model's accuracy (metrics). These values were selected for this project, yet are generally dependent on the model's intent and expected input and output."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "model.compile( optimizer = 'adam', loss = 'sparse_categorical_crossentropy', metrics = ['accuracy'])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now we can begin training our model! Now, with already having generated and compiled the model, the code required to train the model is a single line."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1/5\n",
+      "1875/1875 [==============================] - 2s 1ms/step - loss: 0.5018 - accuracy: 0.8225\n",
+      "Epoch 2/5\n",
+      "1875/1875 [==============================] - 2s 1ms/step - loss: 0.3789 - accuracy: 0.8622\n",
+      "Epoch 3/5\n",
+      "1875/1875 [==============================] - 2s 1ms/step - loss: 0.3389 - accuracy: 0.8756\n",
+      "Epoch 4/5\n",
+      "1875/1875 [==============================] - 2s 1ms/step - loss: 0.3138 - accuracy: 0.8854\n",
+      "Epoch 5/5\n",
+      "1875/1875 [==============================] - 2s 1ms/step - loss: 0.2944 - accuracy: 0.8901\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "<tensorflow.python.keras.callbacks.History at 0x189231b4e80>"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "model.fit(train_images, train_labels, epochs=5)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This single line completes the entire job of training our model, but let's take a brief look at the arguments provided to the model.fit command.\n",
+    "\n",
+    "1. The first argument is input data, and recall that our input Flatten layer takes a (28,28) array, conforming to the dimensionality of our images.\n",
+    "2. Next we train the system by providing the correct classification for all the training examples.\n",
+    "3. The final argument is the number of epochs undertaken during training; each epoch is a training cycle over all the training data. Our setting the epoch value to 5 means that the model will be trained overall 60,000 training examples 5 times. After each epoch, we get both the value of the loss function and the model's accuracy (88.97% after epoch 5) at this epoch."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Evaluating Our Model\n",
+    "---\n",
+    "Now we are working with a functional and trained NN model. Following our logic from the top, we have built a NN that intakes a (28,28) array, flattens the data into a (784) array, compiled and trained 2 dense layers, and the softmax activation function of the final output layer will provide a probability that the image belongs to each of the 10 label categories.\n",
+    "\n",
+    "Our model can be evaluated by using the model.evaluate command, that takes in the images and labels so that it can compare its predictions to the ground truth provided by the labels. Model.evaluate provides two outputs, the value of the loss function over the testing examples, and the accuracy of the model over this testing population. The important output for us is the model's accuracy."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.6"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
